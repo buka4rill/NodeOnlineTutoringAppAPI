@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const {v4: uuid} = 'uuid';
 const config = require('config');
-const auth = require('../middleware/adminAuth');
+// const auth = require('../middleware/adminAuth');
 const { check, validationResult } = require('express-validator');
 
 // Include Student User model

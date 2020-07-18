@@ -14,7 +14,7 @@ const TutorUser = require('../models/TutorUser');
 
 // @route       POST api/users/admin
 // @desc        Register an admin based on if tutor has tutorId
-// @accees      Private
+// @accees      Public
 router.post(
     '/', 
     [
@@ -88,11 +88,24 @@ router.post(
 router.get('/tutors', auth, async (req, res) => {
     try {
         // Pull from database 
+        // const adminUser = await AdminUser.findById(req.adminUser.id).select('-password');
+        const adminUser = await AdminUser.findById(req.adminUser.id).select('-password');
+
+        if (adminUser) {
+            // Find tutors admin
+            const tutorUsers = await TutorUser.find({ tutorUser: req.tutorUser });
+        
+            res.json(tutorUsers);
+        } else {
+            // Unauthorised
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+
 
         // Find tutors admin
-        const tutorUsers = await TutorUser.find({ tutorUser: req.tutorUser });
+        // const tutorUsers = await TutorUser.find({ tutorUser: req.tutorUser });
 
-        res.json(tutorUsers);
+        // res.json(tutorUsers);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -107,10 +120,19 @@ router.get('/tutors/:id', auth, async (req, res) => {
     try {
         // Pull from database 
 
-        // Find tutors admin
-        const tutorUsers = await TutorUser.findById(req.params.id);
+        const adminUser = await AdminUser.findById(req.adminUser.id).select('-password');
 
-        res.json(tutorUsers);
+        if (adminUser) {
+            // Find tutors admin
+            const tutorUsers = await TutorUser.findById(req.params.id);
+
+            res.json(tutorUsers);
+        } else {
+            // Unauthorised
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+        
+        
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -122,33 +144,41 @@ router.get('/tutors/:id', auth, async (req, res) => {
 // @accees      Private
 router.put('/tutors/:id', auth, async (req, res) => {
     try {
-        // Find tutors admin
-        let tutorUser = await TutorUser.findById(req.params.id);
 
-        if (!tutorUser) return res.status(404).json({ msg: 'Tutor not found' });
+        const adminUser = await AdminUser.findById(req.adminUser.id).select('-password');
+        console.log(adminUser);
+        console.log(auth)
+        
+        if (adminUser) {
+            // Find tutors admin
+            let tutorUser = await TutorUser.findById(req.params.id);
 
+            if (!tutorUser) return res.status(404).json({ msg: 'Tutor not found' });
 
-        const { isAdmin, isActive } = req.body;
+            let { isAdmin, isActive } = req.body;
 
-        let tutorFields = {};
-      
-        // Activate or Deactivate Tutor
-        if (isActive) {
-            tutorFields.isActive = isActive;
-        } 
+            let tutorFields = {};
+        
+            // Activate or Deactivate Tutor
+            if (isActive) {
+                tutorFields.isActive = isActive;
+            }
 
-        // Set Admin status
-        if (isAdmin) {
-            tutorFields.isAdmin = isAdmin;
+            // Set Admin status
+            if (isAdmin) {
+                tutorFields.isAdmin = isAdmin;
+            }
+        
+            // Update tutor status
+            tutorUser = await TutorUser.findByIdAndUpdate(req.params.id,
+                { $set: tutorFields },
+                { new: true }  
+            );
+
+            
+            res.json(tutorUser);
         }
-    
-        // Update tutor status
-        tutorUser = await TutorUser.findByIdAndUpdate(req.params.id,
-          { $set: tutorFields },
-          { new: true }  
-        );
-
-        res.json(tutorUser);
+        
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
